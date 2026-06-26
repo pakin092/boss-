@@ -1,0 +1,6 @@
+{
+  "name": "Dan Sai Adventure",
+  "description": "An exciting adventure game themed around the famous Phi Ta Khon Festival in Dan Sai, Thailand.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
