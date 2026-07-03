@@ -1,5 +1,5 @@
-# Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+# Sample workflow for building and deploying a Vite/React/ThreeJS site to GitHub Pages
+name: Deploy ThreeJS RPG Site to GitHub Pages
 
 on:
   # Runs on pushes targeting the default branch
@@ -15,8 +15,7 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -28,15 +27,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm' # หรือ 'yarn' / 'pnpm' ขึ้นอยู่กับที่โปรเจกต์คุณใช้
+
+      - name: Install dependencies
+        run: npm ci # ติดตั้ง package ทั้งหมดตาม package-lock.json
+
+      - name: Build Project
+        run: npm run build # บิวด์โปรเจกต์ (Vite จะสร้างโฟลเดอร์ dist ออกมา)
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
+        with:
+          # ระบุโฟลเดอร์ที่บิวด์เสร็จแล้ว (ถ้าเป็น Vite จะชื่อ dist, ถ้าเป็นอย่างอื่นอาจเป็น build หรือ out)
+          path: './dist' 
 
   # Deployment job
   deploy:
@@ -49,3 +60,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+        
