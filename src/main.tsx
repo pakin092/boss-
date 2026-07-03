@@ -1,21 +1,31 @@
 // Audio Engine using Web Audio API to synthesize sound effects and dynamic music
 class AudioEngine {
   private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null; // เพิ่มช่องทางควบคุมเสียงระดับสากล
   private musicInterval: any = null;
   private isMusicPlaying = false;
   private volume: number = 0.5; // 0.0 to 1.0
   private soundEnabled: boolean = true;
   private musicEnabled: boolean = true;
 
-  private init() {
+  // ปรับปรุง: แยกฟังก์ชันประกาศตัวแปรให้เป็นระบบและปลอดภัยยิ่งขึ้น
+  public init() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
+        // สร้างช่องทางกลางคุมระดับเสียงทั้งหมด
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.connect(this.ctx.destination);
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+    
+    // อัปเดตค่าความดังเข้า Master Node ทันที
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
     }
   }
 
@@ -23,6 +33,11 @@ class AudioEngine {
     this.soundEnabled = soundEnabled;
     this.musicEnabled = musicEnabled;
     this.volume = volume / 100;
+
+    // อัปเดตเสียงแบบเรียลไทม์ ไม่ต้องรอเริ่มเล่นเพลงใหม่
+    if (this.ctx && this.masterGain) {
+      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    }
 
     if (!musicEnabled && this.isMusicPlaying) {
       this.stopMusic();
@@ -32,9 +47,8 @@ class AudioEngine {
   }
 
   public playSelect() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -43,20 +57,19 @@ class AudioEngine {
     osc.frequency.setValueAtTime(400, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.1);
 
-    gain.gain.setValueAtTime(this.volume * 0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain); // เปลี่ยนมาต่อเข้า masterGain
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
   public playJump() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -65,45 +78,42 @@ class AudioEngine {
     osc.frequency.setValueAtTime(200, this.ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.15);
 
-    gain.gain.setValueAtTime(this.volume * 0.2, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.15);
   }
 
-  // 1. เพิ่มเอฟเฟกต์เสียงต่อย/โจมตี (ปุ่ม P) - เสียงกระแทกสั้น ดุดัน
+  // เสียงต่อย/โจมตี (ปุ่ม P) - เสียงกระแทกสั้น ดุดัน
   public playAttack() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
 
     osc.type = 'square';
     osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-    // ความถี่วูบลงอย่างรวดเร็วให้ความรู้สึกเหมือนการปะทะ (Impact)
     osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.08);
 
-    gain.gain.setValueAtTime(this.volume * 0.3, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.08);
   }
 
-  // 2. เพิ่มเอฟเฟกต์เสียงสกิลระเบิดพลังวงแหวน (ปุ่ม O) - เสียงชาร์จกระจายเบสแน่น
+  // เสียงสกิลระเบิดพลังวงแหวน (ปุ่ม O) - เสียงชาร์จกระจายเบสแน่น
   public playSkillRing() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -111,10 +121,9 @@ class AudioEngine {
 
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-    // ความถี่ไล่ขึ้นเลียนแบบการขยายตัวของวงแหวนเวทย์
     osc.frequency.linearRampToValueAtTime(350, this.ctx.currentTime + 0.4);
 
-    gain.gain.setValueAtTime(this.volume * 0.4, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.45);
 
     filter.type = 'lowpass';
@@ -122,16 +131,15 @@ class AudioEngine {
 
     osc.connect(gain);
     gain.connect(filter);
-    filter.connect(this.ctx.destination);
+    filter.connect(this.masterGain);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.45);
   }
 
   public playCollect() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc1 = this.ctx.createOscillator();
     const osc2 = this.ctx.createOscillator();
@@ -145,12 +153,12 @@ class AudioEngine {
     osc2.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.04); 
     osc2.frequency.setValueAtTime(1046.50, this.ctx.currentTime + 0.12); 
 
-    gain.gain.setValueAtTime(this.volume * 0.15, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
 
     osc1.connect(gain);
     osc2.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain);
 
     osc1.start();
     osc2.start();
@@ -159,9 +167,8 @@ class AudioEngine {
   }
 
   public playHurt() {
-    if (!this.soundEnabled) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.soundEnabled || !this.ctx || !this.masterGain) return;
 
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -170,21 +177,20 @@ class AudioEngine {
     osc.frequency.setValueAtTime(180, this.ctx.currentTime);
     osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.3);
 
-    gain.gain.setValueAtTime(this.volume * 0.3, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.masterGain);
 
     osc.start();
     osc.stop(this.ctx.currentTime + 0.3);
   }
 
   public playGameOver() {
-    if (!this.soundEnabled) return;
     this.init();
-    const context = this.ctx; // ล็อกอินสแตนซ์ป้องกันความคลุมเครือในลูป
-    if (!context) return;
+    const context = this.ctx;
+    if (!this.soundEnabled || !context || !this.masterGain) return;
 
     const now = context.currentTime;
     const notes = [293.66, 277.18, 261.63, 220.00]; 
@@ -196,11 +202,11 @@ class AudioEngine {
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(freq, now + i * 0.15);
 
-      gain.gain.setValueAtTime(this.volume * 0.25, now + i * 0.15);
+      gain.gain.setValueAtTime(0.25, now + i * 0.15);
       gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.15 + 0.3);
 
       osc.connect(gain);
-      gain.connect(context.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(now + i * 0.15);
       osc.stop(now + i * 0.15 + 0.3);
@@ -208,10 +214,9 @@ class AudioEngine {
   }
 
   public playWin() {
-    if (!this.soundEnabled) return;
     this.init();
-    const context = this.ctx; // ล็อกอินสแตนซ์ป้องกันความคลุมเครือในลูป
-    if (!context) return;
+    const context = this.ctx;
+    if (!this.soundEnabled || !context || !this.masterGain) return;
 
     const now = context.currentTime;
     const notes = [440.00, 554.37, 659.25, 880.00]; 
@@ -223,11 +228,11 @@ class AudioEngine {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now + i * 0.1);
 
-      gain.gain.setValueAtTime(this.volume * 0.2, now + i * 0.1);
+      gain.gain.setValueAtTime(0.2, now + i * 0.1);
       gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.4);
 
       osc.connect(gain);
-      gain.connect(context.destination);
+      gain.connect(this.masterGain!);
 
       osc.start(now + i * 0.1);
       osc.stop(now + i * 0.1 + 0.4);
@@ -237,9 +242,8 @@ class AudioEngine {
   public startMusic() {
     if (!this.musicEnabled || this.isMusicPlaying) return;
     this.init();
-    if (!this.ctx) return;
+    if (!this.ctx || !this.masterGain) return;
 
-    // เคลียร์ Interval เก่าออกก่อนเสมอเพื่อกันเสียงทับซ้อนกันซ้ำ ๆ
     if (this.musicInterval) {
       clearInterval(this.musicInterval);
     }
@@ -254,10 +258,10 @@ class AudioEngine {
     ];
 
     const tick = () => {
-      if (!this.isMusicPlaying || !this.ctx) return;
+      if (!this.isMusicPlaying || !this.ctx || !this.masterGain) return;
 
       const now = this.ctx.currentTime;
-      const vol = this.volume * 0.12;
+      const vol = 0.12; // ใช้ค่าคงที่สำหรับผสมเสียง เพราะ masterGain จะคุมความดังรวมให้เอง
 
       // 1. Kick/Beat
       if (step % 2 === 0) {
@@ -268,7 +272,7 @@ class AudioEngine {
         kickGain.gain.setValueAtTime(vol * 1.5, now);
         kickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
         kickOsc.connect(kickGain);
-        kickGain.connect(this.ctx.destination);
+        kickGain.connect(this.masterGain);
         kickOsc.start(now);
         kickOsc.stop(now + 0.15);
       }
@@ -281,7 +285,7 @@ class AudioEngine {
       hatGain.gain.setValueAtTime(step % 4 === 2 ? vol * 0.4 : vol * 0.15, now);
       hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
       hatOsc.connect(hatGain);
-      hatGain.connect(this.ctx.destination);
+      hatGain.connect(this.masterGain);
       hatOsc.start(now);
       hatOsc.stop(now + 0.04);
 
@@ -299,7 +303,7 @@ class AudioEngine {
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(300, now);
       bassGain.connect(filter);
-      filter.connect(this.ctx.destination);
+      filter.connect(this.masterGain);
       
       bassOsc.start(now);
       bassOsc.stop(now + 0.25);
@@ -314,36 +318,4 @@ class AudioEngine {
         leadOsc.frequency.linearRampToValueAtTime(leadNote + 10, now + 0.1);
         leadOsc.frequency.linearRampToValueAtTime(leadNote - 10, now + 0.2);
 
-        leadGain.gain.setValueAtTime(vol * 0.25, now);
-        leadGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        leadOsc.connect(leadGain);
-        
-        const phinFilter = this.ctx.createBiquadFilter();
-        phinFilter.type = 'bandpass';
-        phinFilter.frequency.setValueAtTime(1000, now);
-        phinFilter.Q.setValueAtTime(1.0, now);
-        leadGain.connect(phinFilter);
-        phinFilter.connect(this.ctx.destination);
-
-        leadOsc.start(now);
-        leadOsc.stop(now + 0.25);
-      }
-
-      step++;
-    };
-
-    const bpmInterval = 230; 
-    this.musicInterval = setInterval(tick, bpmInterval);
-    tick();
-  }
-
-  public stopMusic() {
-    this.isMusicPlaying = false;
-    if (this.musicInterval) {
-      clearInterval(this.musicInterval);
-      this.musicInterval = null;
-    }
-  }
-}
-
-export const audio = new AudioEngine();
+        leadGain.gain.setValueAtTime(vol *
