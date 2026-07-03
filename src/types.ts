@@ -1,21 +1,48 @@
-import { createClayBrickTexture, createGrassTexture } from './ProceduralTextures';
+export type CharacterId = 'red' | 'green' | 'gold';
 
-// ... โค้ดส่วนอื่นๆ ของคุณ ...
+export interface Character {
+  id: CharacterId;
+  name: string;
+  thaiName: string;
+  color: string;
+  accentColor: string;
+  description: string;
+  thaiDescription: string;
+  speed: number;
+  jumpForce: number;
+  maxJumps: number;
+  specialAbility: string;
+  thaiSpecialAbility: string;
+}
 
-// เลือกสร้าง Texture ตามที่ต้องการใช้งาน (เช่น ลายหญ้า)
-const groundTexture = createGrassTexture();
+// 1. เพิ่มปุ่มควบคุมให้ครบตามเงื่อนไข (WASD, Arrow Keys, P, O)
+export type ControlKey = 'left' | 'right' | 'up' | 'down' | 'jump' | 'attack' | 'skill';
 
-// กำหนดจำนวนการวนซ้ำ (Tiling) ยิ่งตัวเลขมาก ลายจะยิ่งเล็กและละเอียดขึ้น
-groundTexture.repeat.set(10, 10); 
+export interface ControlsConfig {
+  left: string;   // เช่น 'KeyA' หรือ 'ArrowLeft'
+  right: string;  // เช่น 'KeyD' หรือ 'ArrowRight'
+  up: string;     // เช่น 'KeyW' หรือ 'ArrowUp'
+  down: string;   // เช่น 'KeyS' หรือ 'ArrowDown'
+  jump: string;   // เช่น 'Space'
+  attack: string; // เช่น 'KeyP' (ต่อย/โจมตี ปล่อย Hit Box)
+  skill: string;  // เช่น 'KeyO' (สกิลระเบิดพลัง วงแหวนขยาย)
+}
 
-// สร้าง Material และสวมใส่ให้กับพื้นดิน
-const groundMaterial = new THREE.MeshStandardMaterial({
-  map: groundTexture,
-  roughness: 0.8, // ลดความเงาสะท้อนเพื่อให้ดูเป็นธรรมชาติ
-});
+export interface GameSettings {
+  volume: number; // 0 to 100
+  soundEnabled: boolean;
+  musicEnabled: boolean;
+  showOnScreenButtons: boolean; // Virtual controller สำหรับมือถือ
+  controls: ControlsConfig;
+}
 
-// นำไปใส่ใน Mesh ของพื้นดิน
-const groundGeo = new THREE.PlaneGeometry(50, 50);
-const ground = new THREE.Mesh(groundGeo, groundMaterial);
-ground.rotation.x = -Math.PI / 2;
-scene.add(ground);
+export interface HighScore {
+  name: string;
+  score: number;
+  characterId: CharacterId;
+  date: string;
+}
+
+// 2. เพิ่มเติม State ของตัวละครในเกม (มีประโยชน์มากในไฟล์ App.tsx หรือ Player.tsx)
+// สำหรับใช้เช็คเพื่อเปลี่ยนแถวอนิเมชัน Sprite Sheet (แถว 1: นิ่ง, แถว 2: เดิน, แถว 3: โจมตี, แถว 4: เต้น)
+export type CharacterAnimationState = 'idle' | 'walk' | 'attack' | 'dance';
