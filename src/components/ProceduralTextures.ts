@@ -14,7 +14,7 @@ export function createClayBrickTexture(): THREE.CanvasTexture {
     ctx.fillStyle = '#6e3c23';
     ctx.fillRect(0, 0, 512, 512);
 
-    // 2. Add fine dirt and noise
+    // 2. Add fine dirt and noise (Seamless safe wrapping)
     for (let i = 0; i < 3000; i++) {
       const x = Math.random() * 512;
       const y = Math.random() * 512;
@@ -25,7 +25,7 @@ export function createClayBrickTexture(): THREE.CanvasTexture {
       ctx.fillRect(x, y, size, size);
     }
 
-    // 3. Draw bricks pattern (8 columns, 16 rows)
+    // 3. Draw bricks pattern (Seamless 12 rows, 6 columns)
     const rows = 12;
     const cols = 6;
     const rowHeight = 512 / rows;
@@ -43,27 +43,37 @@ export function createClayBrickTexture(): THREE.CanvasTexture {
       ctx.stroke();
 
       if (r < rows) {
-        // Vertical joints (staggered)
+        // แถวสลับเยื้องแบบ Seamless: ใช้สูตรหารลงตัวกับขนาดกว้าง 512 เสมอ
         const offset = (r % 2) * (colWidth / 2);
-        for (let c = -1; c <= cols + 1; c++) {
-          const x = c * colWidth + offset;
+        for (let c = 0; c < cols; c++) {
+          let x = c * colWidth + offset;
+          
+          // วาดเส้นแนวตั้งหลัก
           ctx.beginPath();
           ctx.moveTo(x, y);
           ctx.lineTo(x, y + rowHeight);
           ctx.stroke();
+
+          // เติมเต็มเงื่อนไขขอบต่อกันเพื่อความ Seamless ชนขอบอีกฝั่ง
+          if (offset > 0 && c === 0) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(0, y + rowHeight);
+            ctx.stroke();
+          }
         }
       }
     }
 
-    // 4. Highlight brick edges for a 3D bevel look
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    // 4. Highlight brick edges for a 3D bevel look (Seamless)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
     ctx.lineWidth = 1.5;
     for (let r = 0; r < rows; r++) {
       const y = r * rowHeight;
       const offset = (r % 2) * (colWidth / 2);
-      for (let c = -1; c <= cols + 1; c++) {
+      for (let c = 0; c < cols; c++) {
         const x = c * colWidth + offset;
-        // Top-left brick highlights
+        
         ctx.beginPath();
         ctx.moveTo(x + 2, y + rowHeight - 2);
         ctx.lineTo(x + 2, y + 2);
@@ -72,14 +82,14 @@ export function createClayBrickTexture(): THREE.CanvasTexture {
       }
     }
 
-    // 5. Add moss patches (greenish overlays) at random intersections
+    // 5. Add moss patches (greenish overlays)
     for (let i = 0; i < 20; i++) {
       const mx = Math.random() * 512;
       const my = Math.random() * 512;
       const r = Math.random() * 40 + 20;
       const grad = ctx.createRadialGradient(mx, my, 0, mx, my, r);
-      grad.addColorStop(0, 'rgba(46, 82, 38, 0.5)');
-      grad.addColorStop(0.5, 'rgba(34, 61, 28, 0.25)');
+      grad.addColorStop(0, 'rgba(46, 82, 38, 0.4)');
+      grad.addColorStop(0.6, 'rgba(34, 61, 28, 0.18)');
       grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       
       ctx.fillStyle = grad;
