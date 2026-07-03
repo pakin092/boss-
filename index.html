@@ -1,16 +1,119 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dan Sai Adventure</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-black text-white selection:bg-amber-500 selection:text-black">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+#!/usr/bin/env bash
+set -e
 
+# ปรับชื่อ branch ถ้าต้องการ
+BRANCH="feature/add-landing"
+BASE_BRANCH="main"
+
+# สร้าง branch ใหม่จาก remote base
+git fetch origin
+git checkout -b "$BRANCH"
+
+# สร้างไฟล์ index.html
+cat > index.html <<'HTML'
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>boss- — Game landing</title>
+  <style>
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; max-width:800px; margin:40px auto; padding:0 20px; color:#111 }
+    a { color:#0366d6 }
+    header { margin-bottom:1rem }
+    ul.demo-list { columns:2; -webkit-columns:2; -moz-columns:2 }
+    pre { background:#f6f8fa; padding:10px; border-radius:6px }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>boss- — Project landing</h1>
+    <p>หน้าเว็บตัวอย่างที่สร้างขึ้นเพื่อให้คุณเปิดดูรีโปและเดโมได้ง่ายขึ้น</p>
+  </header>
+
+  <section>
+    <h2>Live demos / Share links</h2>
+    <ul class="demo-list">
+      <li><a href="https://tung-weld.vercel.app" target="_blank">tung-weld.vercel.app</a></li>
+      <li><a href="https://dungeon-fight.vercel.app/" target="_blank">dungeon-fight.vercel.app</a></li>
+      <li><a href="https://demo-game-woad.vercel.app/" target="_blank">demo-game-woad.vercel.app</a></li>
+      <li><a href="https://rp-gstudio.vercel.app/" target="_blank">rp-gstudio.vercel.app</a></li>
+      <li><a href="https://demi-xi.vercel.app/" target="_blank">demi-xi.vercel.app</a></li>
+      <li><a href="https://first-game-black-iota.vercel.app/" target="_blank">first-game-black-iota.vercel.app</a></li>
+      <li><a href="https://fpsstudio-99my.vercel.app/" target="_blank">fpsstudio-99my.vercel.app</a></li>
+      <li><a href="https://depa-aigames01.psc.toonshou.in" target="_blank">depa-aigames01.psc.toonshou.in</a></li>
+      <li><a href="https://hanuman-run.vercel.app/" target="_blank">hanuman-run.vercel.app</a></li>
+      <li><a href="https://three-js-2-d-sprite-rpg-game.vercel.app/" target="_blank">three-js-2-d-sprite-rpg-game.vercel.app</a></li>
+      <li><a href="https://rama-game.vercel.app/" target="_blank">rama-game.vercel.app</a></li>
+      <li><a href="https://neeeee-one.vercel.app/" target="_blank">neeeee-one.vercel.app</a></li>
+      <li><a href="https://kanapot.vercel.app/" target="_blank">kanapot.vercel.app</a></li>
+      <li><a href="https://teera-seven.vercel.app/" target="_blank">teera-seven.vercel.app</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Quick links</h2>
+    <ul>
+      <li><a href="https://github.com/pakin092/boss-/issues" target="_blank">Issues</a> (project tasks)</li>
+      <li><a href="https://github.com/pakin092/boss-" target="_blank">Repository</a></li>
+      <li>If you want GitHub Pages published at <code>https://pakin092.github.io/boss-/</code> I added a workflow to deploy; please push to the default branch (main) or tell me the default branch name so I can adjust the workflow.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What I did</h2>
+    <ul>
+      <li>เพิ่มไฟล์ <code>index.html</code> ที่ root ของรีโปเป็น landing page</li>
+      <li>เพิ่ม GitHub Actions workflow เพื่อ deploy เป็น Pages (ดูที่ <code>.github/workflows/deploy-pages.yml</code>)</li>
+    </ul>
+  </section>
+
+  <footer style="margin-top:2rem;color:#666">
+    <p>ถ้าต้องการเนื้อหาอื่นบนหน้าเว็บ (ตัวอย่างเกมฝัง iframe, รูปตัวอย่าง, หรือ demo build) บอกผมได้เลย ผมจะเพิ่มให้</p>
+  </footer>
+</body>
+</html>
+HTML
+
+# สร้าง workflow โฟลเดอร์และไฟล์
+mkdir -p .github/workflows
+cat > .github/workflows/deploy-pages.yml <<'YAML'
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+YAML
+
+# commit + push
+git add index.html .github/workflows/deploy-pages.yml
+git commit -m "Add landing page and Pages workflow"
+git push --set-upstream origin "$BRANCH"
+
+# create PR using gh (if available)
+if command -v gh >/dev/null 2>&1; then
+  gh pr create --base "$BASE_BRANCH" --title "Add landing page and GitHub Pages workflow (feature/add-landing → main)" --body "- Added index.html landing page with demo/share links and quick repo links.\n- Added .github/workflows/deploy-pages.yml to deploy the repo root to GitHub Pages on push to main.\n- Purpose: Provide a simple project landing page and automated Pages deployment."
+else
+  echo "Pushed branch $BRANCH. Create a PR using this URL:"
+  echo "https://github.com/$(git remote get-url origin | sed -E 's#(git@|https://)([^/:]+)[/:]([^/]+)/([^/.]+)(.git)?#\3/\4#')/compare/$BASE_BRANCH...$BRANCH?expand=1"
+fi
+
+echo "Done."
